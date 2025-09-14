@@ -13,16 +13,16 @@ class FraudDetector:
         print("Loading fraud detection models...")
         
         # Load the trained model
-        self.model = joblib.load('../models/best_fraud_model.pkl')
-        
+        self.model = joblib.load('models/best_fraud_model.pkl')
+
         # Load preprocessing components
-        self.scaler = joblib.load('../models/scaler.pkl')
-        self.merchant_encoder = joblib.load('../models/merchant_encoder.pkl')
-        self.category_encoder = joblib.load('../models/category_encoder.pkl')
-        self.location_encoder = joblib.load('../models/location_encoder.pkl')
-        
+        self.scaler = joblib.load('models/scaler.pkl')
+        self.merchant_encoder = joblib.load('models/merchant_encoder.pkl')
+        self.category_encoder = joblib.load('models/category_encoder.pkl')
+        self.location_encoder = joblib.load('models/location_encoder.pkl')
+
         # Load model metadata
-        self.metadata = joblib.load('../models/model_metadata.pkl')
+        self.metadata = joblib.load('models/model_metadata.pkl')
         
         print(f"Loaded {self.metadata['model_type']} model")
         print(f"Model AUC Score: {self.metadata['auc_score']:.4f}")
