@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(45deg, #6c757d, #adb5bd);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        .status.active {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status.inactive {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .stat-label {
+            color: #e0e6ed;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .fraud-rate {
+            color: #ff6b6b;
+        }
+
+        .legitimate-rate {
+            color: #51cf66;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .transactions-section, .alerts-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .transaction-item, .alert-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+
+        .transaction-item:hover, .alert-item:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .transaction-legitimate {
+            border-left-color: #28a745;
+        }
+
+        .transaction-fraud {
+            border-left-color: #dc3545;
+            animation: fraudAlert 2s ease-in-out;
+        }
+
+        @keyframes fraudAlert {
+            0%, 100% { background: rgba(255, 255, 255, 0.1); }
+            50% { background: rgba(220, 53, 69, 0.3); }
+        }
+
+        .transaction-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .transaction-id {
+            font-weight: bold;
+            color: #ffd43b;
+        }
+
+        .transaction-amount {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .transaction-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #e0e6ed;
+        }
+
+        .risk-score {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .risk-high {
+            background: #dc3545;
+        }
+
+        .risk-medium {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .risk-low {
+            background: #28a745;
+        }
+
+        .risk-very-low {
+            background: #17a2b8;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #adb5bd;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .analyze-form {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .analyze-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .result-fraud {
+            background: rgba(220, 53, 69, 0.3);
+            border: 1px solid #dc3545;
+        }
+
+        .result-legitimate {
+            background: rgba(40, 167, 69, 0.3);
+            border: 1px solid #28a745;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Fraud Detection Dashboard</h1>
+            <p>Real-time Machine Learning Fraud Detection System</p>
+            <div class="controls">
+                <button class="btn btn-start" onclick="startMonitoring()">🚀 Start Monitoring</button>
+                <button class="btn btn-stop" onclick="stopMonitoring()">🛑 Stop Monitoring</button>
+                <button class="btn btn-reset" onclick="resetStats()">🔄 Reset Data</button>
+            </div>
+            <div id="status" class="status inactive">● INACTIVE</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-transactions">0</div>
+                <div class="stat-label">Total Transactions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number fraud-rate" id="fraud-count">0</div>
+                <div class="stat-label">Fraud Detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number legitimate-rate" id="legitimate-count">0</div>
+                <div class="stat-label">Legitimate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="fraud-rate">0.0%</div>
+                <div class="stat-label">Fraud Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-amount">$0.00</div>
+                <div class="stat-label">Total Amount</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avg-amount">$0.00</div>
+                <div class="stat-label">Average Amount</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="transactions-section">
+                <h2 class="section-title">📋 Recent Transactions</h2>
+                <div id="transactions-list">
+                    <div class="no-data">No transactions yet. Start monitoring to see live data!</div>
+                </div>
+            </div>
+
+            <div class="alerts-section">
+                <h2 class="section-title">🚨 Fraud Alerts</h2>
+                <div id="alerts-list">
+                    <div class="no-data">No fraud alerts yet.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="analyze-form">
+            <h2 class="section-title">🔍 Analyze Custom Transaction</h2>
+            <form id="analyze-form">
+                <div class="form-group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="amount" step="0.01" placeholder="100.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Merchant</label>
+                    <select id="merchant" required>
+                        <option value="">Select Merchant</option>
+                        <option value="Amazon">Amazon</option>
+                        <option value="Walmart">Walmart</option>
+                        <option value="Starbucks">Starbucks</option>
+                        <option value="Online Casino">Online Casino</option>
+                        <option value="Crypto Exchange">Crypto Exchange</option>
+                        <option value="Gas Station">Gas Station</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="category" required>
+                        <option value="">Select Category</option>
+                        <option value="retail">Retail</option>
+                        <option value="food">Food</option>
+                        <option value="gambling">Gambling</option>
+                        <option value="crypto">Crypto</option>
+                        <option value="gas">Gas</option>
+                        <option value="entertainment">Entertainment</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Account Age (days)</label>
+                    <input type="number" id="account_age" placeholder="365" required>
+                </div>
+                <div class="form-group">
+                    <label>Location Risk</label>
+                    <select id="location_risk" required>
+                        <option value="">Select Risk Level</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-start">🔍 Analyze Transaction</button>
+            </form>
+            <div id="analyze-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let isMonitoring = false;
+
+        // Socket event listeners
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        socket.on('new_transaction', function(transaction) {
+            addTransactionToList(transaction);
+        });
+
+        socket.on('stats_update', function(stats) {
+            updateStats(stats);
+        });
+
+        socket.on('fraud_alert', function(alert) {
+            addFraudAlert(alert);
+            showNotification('🚨 Fraud Alert!', `$${alert.amount} transaction flagged at ${alert.merchant}`);
+        });
+
+        socket.on('monitoring_status', function(data) {
+            updateMonitoringStatus(data.status);
+        });
+
+        socket.on('transactions_cleared', function() {
+            document.getElementById('transactions-list').innerHTML = '<div class="no-data">No transactions yet. Start monitoring to see live data!</div>';
+            document.getElementById('alerts-list').innerHTML = '<div class="no-data">No fraud alerts yet.</div>';
+        });
+
+        // Control functions
+        function startMonitoring() {
+            socket.emit('start_monitoring');
+            isMonitoring = true;
+            updateMonitoringStatus('started');
+        }
+
+        function stopMonitoring() {
+            socket.emit('stop_monitoring');
+            isMonitoring = false;
+            updateMonitoringStatus('stopped');
+        }
+
+        function resetStats() {
+            socket.emit('reset_stats');
+        }
+
+        function updateMonitoringStatus(status) {
+            const statusElement = document.getElementById('status');
+            if (status === 'started') {
+                statusElement.className = 'status active';
+                statusElement.textContent = '● MONITORING ACTIVE';
+            } else {
+                statusElement.className = 'status inactive';
+                statusElement.textContent = '● INACTIVE';
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('total-transactions').textContent = stats.total_transactions.toLocaleString();
+            document.getElementById('fraud-count').textContent = stats.fraud_detected.toLocaleString();
+            document.getElementById('legitimate-count').textContent = stats.legitimate_transactions.toLocaleString();
+            document.getElementById('fraud-rate').textContent = stats.fraud_rate.toFixed(1) + '%';
+            document.getElementById('total-amount').textContent = '$' + stats.total_amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            document.getElementById('avg-amount').textContent = '$' + stats.avg_amount.toFixed(2);
+        }
+
+        function addTransactionToList(transaction) {
+            const transactionsList = document.getElementById('transactions-list');
+            
+            if (transactionsList.querySelector('.no-data')) {
+                transactionsList.innerHTML = '';
+            }
+
+            const fraudClass = transaction.is_fraud ? 'transaction-fraud' : 'transaction-legitimate';
+            const riskClass = getRiskClass(transaction.fraud_probability);
+            const statusIcon = transaction.is_fraud ? '🚨' : '✅';
+
+            const transactionHtml = `
+                <div class="transaction-item ${fraudClass}">
+                    <div class="transaction-header">
+                        <span class="transaction-id">${transaction.transaction_id}</span>
+                        <span class="transaction-amount">${statusIcon} $${transaction.amount.toFixed(2)}</span>
+                    </div>
+                    <div class="transaction-details">
+                        <div>Merchant: ${transaction.merchant}</div>
+                        <div>Time: ${transaction.processed_at}</div>
+                        <div>Category: ${transaction.category}</div>
+                        <div>Risk: <span class="risk-score ${riskClass}">${(transaction.fraud_probability * 100).toFixed(1)}%</span></div>
+                    </div>
+                </div>
+            `;
+
+            transactionsList.insertAdjacentHTML('afterbegin', transactionHtml);
+
+            // Keep only last 10 transactions
+            const transactions = transactionsList.querySelectorAll('.transaction-item');
+            if (transactions.length > 10) {
+                transactions[transactions.length - 1].remove();
+            }
+        }
+
+        function addFraudAlert(alert) {
+            const alertsList = document.getElementById('alerts-list');
+            
+            if (alertsList.querySelector('.no-data')) {
+                alertsList.innerHTML = '';
+            }
+
+            const alertHtml = `
+                <div class="alert-item">
+                    <div class="transaction-header">
+                        <span class="transaction-id">${alert.transaction_id}</span>
+                        <span class="transaction-amount">🚨 $${alert.amount.toFixed(2)}</span>
+                    </div>
+                    <div class="transaction-details">
+                        <div>Merchant: ${alert.merchant}</div>
+                        <div>Time: ${alert.processed_at}</div>
+                        <div>Risk: ${(alert.fraud_probability * 100).toFixed(1)}%</div>
+                        <div>Status: BLOCKED</div>
+                    </div>
+                </div>
+            `;
+
+            alertsList.insertAdjacentHTML('afterbegin', alertHtml);
+
+            // Keep only last 5 alerts
+            const alerts = alertsList.querySelectorAll('.alert-item');
+            if (alerts.length > 5) {
+                alerts[alerts.length - 1].remove();
+            }
+        }
+
+        function getRiskClass(probability) {
+            if (probability >= 0.8) return 'risk-high';
+            if (probability >= 0.5) return 'risk-medium';
+            if (probability >= 0.3) return 'risk-low';
+            return 'risk-very-low';
+        }
+
+        function showNotification(title, message) {
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    new Notification(title, { body: message, icon: '🔐' });
+                } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification(title, { body: message, icon: '🔐' });
+                        }
+                    });
+                }
+            }
+        }
+
+        // Analyze form handler
+        document.getElementById('analyze-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                transaction_id: 'custom_' + Date.now(),
+                user_id: 'custom_user',
+                amount: parseFloat(document.getElementById('amount').value),
+                merchant: document.getElementById('merchant').value,
+                category: document.getElementById('category').value,
+                timestamp: new Date().toISOString(),
+                account_age_days: parseInt(document.getElementById('account_age').value),
+                location_risk: document.getElementById('location_risk').value
+            };
+
+            fetch('/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('analyze-result');
+                if (data.success) {
+                    const result = data.result;
+                    const resultClass = result.is_fraud ? 'result-fraud' : 'result-legitimate';
+                    const statusIcon = result.is_fraud ? '🚨' : '✅';
+                    
+                    resultDiv.innerHTML = `
+                        <div class="analyze-result ${resultClass}">
+                            ${statusIcon} <strong>${result.recommendation}</strong><br>
+                            Fraud Probability: ${(result.fraud_probability * 100).toFixed(1)}%<br>
+                            Risk Level: ${result.risk_level}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="analyze-result result-fraud">Error: ${data.error}</div>`;
+                }
+            });
+        });
+
+        // Request notification permission on load
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>

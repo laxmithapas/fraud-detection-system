@@ -1,0 +1,122 @@
+{
+  "session_summary": {
+    "total_transactions": 6,
+    "fraud_detected": 1,
+    "legitimate_transactions": 5,
+    "total_amount_processed": 1150.2,
+    "total_fraud_amount": 521.45,
+    "avg_fraud_probability": 0.261167595616418,
+    "transactions_per_minute": 5.994876378988091,
+    "last_update": "2025-09-14 12:03:49.804900"
+  },
+  "transactions": [
+    {
+      "transaction_id": "live_1757831329_1098",
+      "user_id": "user_3732",
+      "amount": 6.94,
+      "merchant": "McDonalds",
+      "category": "retail",
+      "timestamp": "2025-09-14 01:24:49",
+      "account_age_days": 51,
+      "location_risk": "low",
+      "is_fraud": false,
+      "fraud_probability": 0.0416621587579634,
+      "risk_level": "VERY LOW",
+      "recommendation": "APPROVE",
+      "processed_time": "2025-09-14 11:58:49"
+    },
+    {
+      "transaction_id": "live_1757831389_8367",
+      "user_id": "user_6697",
+      "amount": 16.05,
+      "merchant": "ATM Withdrawal",
+      "category": "gas",
+      "timestamp": "2025-09-14 01:04:49",
+      "account_age_days": 76,
+      "location_risk": "low",
+      "is_fraud": false,
+      "fraud_probability": 0.0680506819209421,
+      "risk_level": "VERY LOW",
+      "recommendation": "APPROVE",
+      "processed_time": "2025-09-14 11:59:49"
+    },
+    {
+      "transaction_id": "live_1757831449_2096",
+      "user_id": "user_6556",
+      "amount": 500,
+      "merchant": "ATM Withdrawal",
+      "category": "cash",
+      "timestamp": "2025-09-14 03:06:49",
+      "account_age_days": 388,
+      "location_risk": "low",
+      "is_fraud": false,
+      "fraud_probability": 0.49888970730952337,
+      "risk_level": "LOW",
+      "recommendation": "APPROVE",
+      "processed_time": "2025-09-14 12:00:49"
+    },
+    {
+      "transaction_id": "live_1757831509_6944",
+      "user_id": "user_9279",
+      "amount": 40.26,
+      "merchant": "Shell Gas",
+      "category": "electronics",
+      "timestamp": "2025-09-14 13:57:49",
+      "account_age_days": 742,
+      "location_risk": "low",
+      "is_fraud": false,
+      "fraud_probability": 0.0022398886288243595,
+      "risk_level": "VERY LOW",
+      "recommendation": "APPROVE",
+      "processed_time": "2025-09-14 12:01:49"
+    },
+    {
+      "transaction_id": "live_1757831569_5024",
+      "user_id": "user_3653",
+      "amount": 65.5,
+      "merchant": "Starbucks",
+      "category": "electronics",
+      "timestamp": "2025-09-14 17:36:49",
+      "account_age_days": 43,
+      "location_risk": "low",
+      "is_fraud": false,
+      "fraud_probability": 0.014984405897234572,
+      "risk_level": "VERY LOW",
+      "recommendation": "APPROVE",
+      "processed_time": "2025-09-14 12:02:49"
+    },
+    {
+      "transaction_id": "live_1757831629_3494",
+      "user_id": "user_5773",
+      "amount": 521.45,
+      "merchant": "Starbucks",
+      "category": "crypto",
+      "timestamp": "2025-09-14 20:34:49",
+      "account_age_days": 670,
+      "location_risk": "high",
+      "is_fraud": true,
+      "fraud_probability": 0.9411787311840202,
+      "risk_level": "HIGH",
+      "recommendation": "BLOCK",
+      "processed_time": "2025-09-14 12:03:49"
+    }
+  ],
+  "fraud_alerts": [
+    {
+      "transaction_id": "live_1757831629_3494",
+      "user_id": "user_5773",
+      "amount": 521.45,
+      "merchant": "Starbucks",
+      "category": "crypto",
+      "timestamp": "2025-09-14 20:34:49",
+      "account_age_days": 670,
+      "location_risk": "high",
+      "is_fraud": true,
+      "fraud_probability": 0.9411787311840202,
+      "risk_level": "HIGH",
+      "recommendation": "BLOCK",
+      "processed_time": "2025-09-14 12:03:49"
+    }
+  ],
+  "session_end": "2025-09-14 12:04:41"
+}

@@ -6,3 +6,5 @@ seaborn==0.12.2
 jupyter==1.0.0
 flask==2.3.2
 plotly==5.15.0
+flask-socketio==5.3.4
+python-socketio==5.9.0
